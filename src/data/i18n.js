@@ -2,8 +2,8 @@ export const i18n = {
   en: {
     appTitle: "DA YI Operations Management",
     loginTitle: "Company Login",
-    loginHint: "Only company-created accounts can log in. Public registration is disabled.",
-    email: "Email",
+    loginHint: "Only company-created accounts can log in. Public registration is disabled. Company short accounts like JI are supported.",
+    email: "Email / Account",
     password: "Password",
     signIn: "Sign In",
     signOut: "Sign Out",
@@ -56,8 +56,8 @@ export const i18n = {
   zh: {
     appTitle: "DA YI 企业运营管理",
     loginTitle: "公司账号登录",
-    loginHint: "只有公司创建的账号可以登录，外部人员不能自行注册。",
-    email: "邮箱",
+    loginHint: "只有公司创建的账号可以登录，外部人员不能自行注册。支持 JI 这种公司内部短账号。",
+    email: "邮箱 / 账号",
     password: "密码",
     signIn: "登录",
     signOut: "退出",

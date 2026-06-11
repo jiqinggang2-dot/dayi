@@ -31,6 +31,11 @@ const emptyUser = {
   active: true
 };
 
+function normalizeLoginIdentifier(value) {
+  const trimmed = String(value || "").trim();
+  return trimmed.includes("@") ? trimmed : `${trimmed}@dayi.local`;
+}
+
 export default function App() {
   const [lang, setLang] = useState("en");
   const [session, setSession] = useState(null);
@@ -116,7 +121,7 @@ export default function App() {
     const form = new FormData(event.currentTarget);
     setStatus({ loading: true, error: "" });
     const { error } = await supabase.auth.signInWithPassword({
-      email: form.get("email"),
+      email: normalizeLoginIdentifier(form.get("email")),
       password: form.get("password")
     });
     if (error) setStatus({ loading: false, error: error.message });
