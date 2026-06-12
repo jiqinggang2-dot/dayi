@@ -343,10 +343,10 @@ function Dashboard({ records, alerts, t, lang }) {
   return (
     <>
       <div className="metric-grid">
-        <Metric label={t.records} value={records.length} />
-        <Metric label={t.openItems} value={open} />
-        <Metric label={t.alerts} value={alerts.length} />
-        <Metric label={t.critical} value={critical} />
+        <Metric label={t.records} value={records.length} tone="blue" />
+        <Metric label={t.openItems} value={open} tone="green" />
+        <Metric label={t.alerts} value={alerts.length} tone="amber" />
+        <Metric label={t.critical} value={critical} tone="red" />
       </div>
       <section className="panel">
         <div className="panel-header">
@@ -358,10 +358,10 @@ function Dashboard({ records, alerts, t, lang }) {
   );
 }
 
-function Metric({ label, value }) {
+function Metric({ label, value, tone = "blue" }) {
   return (
-    <div className="metric-card">
-      <span>{label}</span>
+    <div className={`metric-card ${tone}`}>
+      <span><i />{label}</span>
       <strong>{value}</strong>
     </div>
   );
