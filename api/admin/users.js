@@ -1,5 +1,17 @@
 import { adminClient, json, requireAdmin } from "./_supabaseAdmin.js";
 
+function normalizeUsername(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function usernameToEmail(username) {
+  const normalized = normalizeUsername(username);
+  return normalized.includes("@") ? normalized : `${normalized}@dayi.local`;
+}
+
 export default async function handler(req, res) {
   if (!["POST", "PATCH"].includes(req.method)) {
     return json(res, 405, { error: "Method not allowed" });
@@ -21,9 +33,11 @@ export default async function handler(req, res) {
 }
 
 async function createUser(res, supabase, creator, body) {
-  const { email, password, full_name, role_id, whatsapp, wechat, active = true } = body;
-  if (!email || !password || !full_name || !role_id) {
-    return json(res, 400, { error: "email, password, full_name and role_id are required" });
+  const { username, email: rawEmail, password, full_name, role_id, whatsapp, wechat, active = true } = body;
+  const normalizedUsername = normalizeUsername(username || rawEmail);
+  const email = usernameToEmail(normalizedUsername);
+  if (!normalizedUsername || !password || !full_name || !role_id) {
+    return json(res, 400, { error: "username, password, full_name and role_id are required" });
   }
   const { data: role, error: roleError } = await supabase.from("app_roles").select("*").eq("id", role_id).single();
   if (roleError || !role) return json(res, 400, { error: "Invalid role" });
@@ -33,7 +47,7 @@ async function createUser(res, supabase, creator, body) {
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name, role_id }
+    user_metadata: { username: normalizedUsername, full_name, role_id }
   });
   if (createError) return json(res, 400, { error: createError.message });
 
@@ -41,6 +55,7 @@ async function createUser(res, supabase, creator, body) {
     .from("app_users")
     .insert({
       auth_user_id: authData.user.id,
+      username: normalizedUsername,
       email,
       full_name,
       role_id,

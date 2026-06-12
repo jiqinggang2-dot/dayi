@@ -7,7 +7,7 @@ React + Supabase version of the DA YI management system.
 - Supabase Auth login
 - No public registration UI
 - CEO / super-admin account controls company access
-- Super admin can create employee/admin accounts with predefined roles
+- Admins create username/password accounts with predefined roles
 - Role-based module access
 - Supabase Postgres database for records and users
 - Row Level Security policies
@@ -15,7 +15,7 @@ React + Supabase version of the DA YI management system.
 
 ## Security Model
 
-- Employees can only log in after a company admin creates an account.
+- Employees can only log in after a company admin creates a username/password account.
 - Browser code only uses the Supabase anon key.
 - The Supabase service-role key is used only inside Vercel serverless API routes.
 - Database RLS denies access to users without an active `app_users` profile.

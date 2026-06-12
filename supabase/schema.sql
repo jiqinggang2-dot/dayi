@@ -18,6 +18,7 @@ create table if not exists public.app_roles (
 create table if not exists public.app_users (
   id uuid primary key default gen_random_uuid(),
   auth_user_id uuid not null unique references auth.users(id) on delete cascade,
+  username text not null unique,
   email text not null unique,
   full_name text not null,
   role_id text not null references public.app_roles(id),
@@ -28,6 +29,13 @@ create table if not exists public.app_users (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.app_users add column if not exists username text;
+update public.app_users
+set username = lower(regexp_replace(split_part(email, '@', 1), '\s+', '', 'g'))
+where username is null or username = '';
+alter table public.app_users alter column username set not null;
+create unique index if not exists app_users_username_lower_key on public.app_users (lower(username));
 
 create table if not exists public.records (
   id uuid primary key default gen_random_uuid(),

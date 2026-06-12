@@ -16,7 +16,7 @@ Then call:
 curl -X POST "https://YOUR-VERCEL-DOMAIN/api/admin/bootstrap" \
   -H "Content-Type: application/json" \
   -H "x-bootstrap-secret: YOUR_BOOTSTRAP_SECRET" \
-  -d "{\"email\":\"ceo@yourcompany.com\",\"password\":\"CHANGE_THIS_PASSWORD\",\"full_name\":\"CEO\"}"
+  -d "{\"username\":\"jiqinggang\",\"password\":\"CHANGE_THIS_PASSWORD\",\"full_name\":\"CEO\"}"
 ```
 
 The route refuses to create a CEO if a super-admin account already exists.

@@ -22,7 +22,7 @@ const emptyRecord = {
 };
 
 const emptyUser = {
-  email: "",
+  username: "",
   password: "",
   full_name: "",
   role_id: "procurement_manager",
@@ -31,9 +31,22 @@ const emptyUser = {
   active: true
 };
 
+function normalizeUsername(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
 function normalizeLoginIdentifier(value) {
-  const trimmed = String(value || "").trim();
+  const trimmed = normalizeUsername(value);
   return trimmed.includes("@") ? trimmed : `${trimmed}@dayi.local`;
+}
+
+function displayAccount(user) {
+  if (!user) return "";
+  if (user.username) return user.username;
+  return String(user.email || "").replace(/@dayi\.local$/i, "");
 }
 
 export default function App() {
@@ -121,7 +134,7 @@ export default function App() {
     const form = new FormData(event.currentTarget);
     setStatus({ loading: true, error: "" });
     const { error } = await supabase.auth.signInWithPassword({
-      email: normalizeLoginIdentifier(form.get("email")),
+      email: normalizeLoginIdentifier(form.get("username")),
       password: form.get("password")
     });
     if (error) setStatus({ loading: false, error: error.message });
@@ -234,8 +247,8 @@ export default function App() {
           </div>
           <h1>{t.loginTitle}</h1>
           <label>
-            {t.email}
-            <input name="email" type="email" required autoComplete="username" />
+            {t.username}
+            <input name="username" required autoComplete="username" />
           </label>
           <label>
             {t.password}
@@ -279,7 +292,7 @@ export default function App() {
         <header className="topbar">
           <div>
             <h1>{pageTitle(view, moduleId, lang, t)}</h1>
-            <p>{profile.full_name || profile.email} · {labelForRole(profile.role, lang)} · {isSuperAdmin(profile) ? t.superAdmin : t.onlyVisibleData}</p>
+            <p>{profile.full_name || displayAccount(profile)} | {labelForRole(profile.role, lang)} | {isSuperAdmin(profile) ? t.superAdmin : t.onlyVisibleData}</p>
           </div>
           <div className="top-actions">
             <div className="language-row inline">
@@ -382,7 +395,7 @@ function Reminders({ groups, lang, t }) {
           <article className="reminder-card" key={group.owner?.id || group.score}>
             <div className="card-title-row">
               <div>
-                <h3>{group.owner?.full_name || group.owner?.email || "Unassigned"}</h3>
+                <h3>{group.owner?.full_name || displayAccount(group.owner) || "Unassigned"}</h3>
                 <p>{group.records.length} {t.openItems}</p>
               </div>
               <span className="pill red">{t.priority}: {group.score}</span>
@@ -482,7 +495,7 @@ function UserSelect({ label, value, users, onChange }) {
       {label}
       <select value={value || ""} onChange={(event) => onChange(event.target.value)}>
         <option value="">-</option>
-        {users.map((user) => <option key={user.id} value={user.id}>{user.full_name || user.email}</option>)}
+        {users.map((user) => <option key={user.id} value={user.id}>{user.full_name || displayAccount(user)}</option>)}
       </select>
     </label>
   );
@@ -494,7 +507,7 @@ function UserManagement({ users, roles, draft, setDraft, t, lang, onSubmit, onCh
   }
 
   function resetPassword(user) {
-    const password = window.prompt(`${t.resetPassword}: ${user.full_name || user.email}`);
+    const password = window.prompt(`${t.resetPassword}: ${user.full_name || displayAccount(user)}`);
     if (password) onChangeUser(user, { password });
   }
 
@@ -509,7 +522,7 @@ function UserManagement({ users, roles, draft, setDraft, t, lang, onSubmit, onCh
           <button className="primary-button"><UserPlus size={16} /> {t.createUser}</button>
         </div>
         <div className="form-grid">
-          <label>{t.email}<input type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} required /></label>
+          <label>{t.username}<input value={draft.username} onChange={(event) => update("username", normalizeUsername(event.target.value))} required /></label>
           <label>{t.tempPassword}<input type="password" value={draft.password} onChange={(event) => update("password", event.target.value)} required /></label>
           <label>{t.fullName}<input value={draft.full_name} onChange={(event) => update("full_name", event.target.value)} required /></label>
           <label>{t.role}<select value={draft.role_id} onChange={(event) => update("role_id", event.target.value)}>{roles.filter((role) => !role.is_super_admin).map((role) => <option key={role.id} value={role.id}>{lang === "zh" ? role.name_zh : role.name_en}</option>)}</select></label>
@@ -523,8 +536,8 @@ function UserManagement({ users, roles, draft, setDraft, t, lang, onSubmit, onCh
           {users.map((user) => (
             <article className="user-card" key={user.id}>
               <div>
-                <h3>{user.full_name || user.email}</h3>
-                <p>{user.email}</p>
+                <h3>{user.full_name || displayAccount(user)}</h3>
+                <p>{displayAccount(user)}</p>
                 <span className="pill blue">{labelForRole(user.role, lang)}</span>
               </div>
               <select value={user.role_id} disabled={user.role?.is_super_admin} onChange={(event) => onChangeUser(user, { role_id: event.target.value })}>

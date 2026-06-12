@@ -1,5 +1,17 @@
 import { adminClient, json } from "./_supabaseAdmin.js";
 
+function normalizeUsername(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function usernameToEmail(username) {
+  const normalized = normalizeUsername(username);
+  return normalized.includes("@") ? normalized : `${normalized}@dayi.local`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
   try {
@@ -18,14 +30,16 @@ export default async function handler(req, res) {
     if (existingAdmins?.length) return json(res, 409, { error: "Super admin already exists" });
 
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    const { email, password, full_name = "CEO" } = body;
-    if (!email || !password) return json(res, 400, { error: "email and password are required" });
+    const { username, email: rawEmail, password, full_name = "CEO" } = body;
+    const normalizedUsername = normalizeUsername(username || rawEmail);
+    const email = usernameToEmail(normalizedUsername);
+    if (!normalizedUsername || !password) return json(res, 400, { error: "username and password are required" });
 
     const { data: authData, error: createError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name, role_id: "super_admin" }
+      user_metadata: { username: normalizedUsername, full_name, role_id: "super_admin" }
     });
     if (createError) return json(res, 400, { error: createError.message });
 
@@ -33,6 +47,7 @@ export default async function handler(req, res) {
       .from("app_users")
       .insert({
         auth_user_id: authData.user.id,
+        username: normalizedUsername,
         email,
         full_name,
         role_id: "super_admin",
