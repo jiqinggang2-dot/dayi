@@ -254,12 +254,14 @@ export default function App() {
             {t.password}
             <input name="password" type="password" required autoComplete="current-password" />
           </label>
-          <button className="primary-button" disabled={status.loading}>{status.loading ? t.loading : t.signIn}</button>
-          {status.error && <div className="error-text">{status.error}</div>}
-          <div className="language-row">
-            <button type="button" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
-            <button type="button" className={lang === "zh" ? "active" : ""} onClick={() => setLang("zh")}>中文</button>
+          <div className="login-actions">
+            <button className="primary-button" disabled={status.loading}>{status.loading ? t.loading : t.signIn}</button>
+            <div className="language-row">
+              <button type="button" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
+              <button type="button" className={lang === "zh" ? "active" : ""} onClick={() => setLang("zh")}>中文</button>
+            </div>
           </div>
+          {status.error && <div className="error-text">{status.error}</div>}
         </form>
       </div>
     );
