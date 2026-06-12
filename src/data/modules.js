@@ -30,6 +30,96 @@ export const RISKS = [
   { id: "critical", zh: "严重", en: "Critical" }
 ];
 
+export const MODULE_EXTRA_FIELDS = {
+  organization: [
+    { id: "department", en: "Department", zh: "部门", type: "text" },
+    { id: "position", en: "Position", zh: "岗位", type: "text" },
+    { id: "permission", en: "Permission Scope", zh: "权限范围", type: "textarea", full: true }
+  ],
+  documents: [
+    { id: "documentNo", en: "Document No.", zh: "文件编号", type: "text" },
+    { id: "version", en: "Version", zh: "版本", type: "text" },
+    { id: "requiredDocs", en: "Required Documents", zh: "必须文件", type: "textarea", full: true },
+    { id: "receivedDocs", en: "Received Documents", zh: "已收文件", type: "textarea", full: true }
+  ],
+  procurement: [
+    { id: "supplier", en: "Supplier", zh: "供应商", type: "text" },
+    { id: "item", en: "Purchase Item", zh: "采购物料", type: "text" },
+    { id: "quantity", en: "Quantity", zh: "数量", type: "number" },
+    { id: "amount", en: "Amount", zh: "金额", type: "number" },
+    { id: "requiredDocs", en: "Required Docs", zh: "必须文件", type: "textarea", full: true },
+    { id: "receivedDocs", en: "Received Docs", zh: "已收文件", type: "textarea", full: true }
+  ],
+  warehouse: [
+    { id: "sku", en: "SKU", zh: "物料/产品编码", type: "text" },
+    { id: "batchNo", en: "Batch No.", zh: "批次号", type: "text" },
+    { id: "quantity", en: "Current Stock", zh: "当前库存", type: "number" },
+    { id: "reorderLevel", en: "Safety Stock", zh: "安全库存", type: "number" },
+    { id: "expiryDate", en: "Expiry Date", zh: "有效期", type: "date" },
+    { id: "location", en: "Location", zh: "库位", type: "text" }
+  ],
+  production: [
+    { id: "product", en: "Product", zh: "产品", type: "text" },
+    { id: "batchNo", en: "Batch No.", zh: "生产批次", type: "text" },
+    { id: "quantity", en: "Planned Qty", zh: "计划数量", type: "number" },
+    { id: "actualQuantity", en: "Actual Qty", zh: "实际数量", type: "number" },
+    { id: "lossRate", en: "Loss Rate %", zh: "损耗率 %", type: "number" }
+  ],
+  sales: [
+    { id: "customer", en: "Customer", zh: "客户", type: "text" },
+    { id: "product", en: "Product", zh: "产品", type: "text" },
+    { id: "amount", en: "Quote / Order Amount", zh: "报价/订单金额", type: "number" },
+    { id: "paymentDue", en: "Payment Due", zh: "回款日期", type: "date" },
+    { id: "nextFollowUp", en: "Next Follow-up", zh: "下次跟进", type: "date" }
+  ],
+  finance: [
+    { id: "transactionType", en: "Type", zh: "类型", type: "text" },
+    { id: "party", en: "Customer / Supplier", zh: "客户/供应商", type: "text" },
+    { id: "amount", en: "Amount", zh: "金额", type: "number" },
+    { id: "paymentDue", en: "Payment Due", zh: "收/付款到期日", type: "date" }
+  ],
+  import_export: [
+    { id: "shipmentNo", en: "Shipment No.", zh: "货运编号", type: "text" },
+    { id: "supplier", en: "Supplier", zh: "供应商", type: "text" },
+    { id: "port", en: "Port", zh: "港口", type: "text" },
+    { id: "eta", en: "ETA", zh: "预计到港", type: "date" },
+    { id: "requiredDocs", en: "Required Documents", zh: "必须单证", type: "textarea", full: true },
+    { id: "receivedDocs", en: "Received Documents", zh: "已收单证", type: "textarea", full: true }
+  ],
+  logistics: [
+    { id: "deliveryNo", en: "Delivery No.", zh: "发货单号", type: "text" },
+    { id: "customer", en: "Customer", zh: "客户", type: "text" },
+    { id: "driver", en: "Driver / Vehicle", zh: "司机/车辆", type: "text" },
+    { id: "quantity", en: "Delivery Qty", zh: "发货数量", type: "number" },
+    { id: "eta", en: "Expected Delivery", zh: "预计签收", type: "date" }
+  ],
+  hr: [
+    { id: "employee", en: "Employee / Candidate", zh: "员工/候选人", type: "text" },
+    { id: "department", en: "Department", zh: "部门", type: "text" },
+    { id: "position", en: "Position", zh: "岗位", type: "text" },
+    { id: "trainingDue", en: "Training / Certificate Due", zh: "培训/证件到期", type: "date" }
+  ],
+  maintenance: [
+    { id: "equipment", en: "Equipment", zh: "设备名称", type: "text" },
+    { id: "equipmentNo", en: "Equipment No.", zh: "设备编号", type: "text" },
+    { id: "maintenanceDue", en: "Maintenance Due", zh: "保养到期", type: "date" },
+    { id: "downtimeHours", en: "Downtime Hours", zh: "停机小时", type: "number" },
+    { id: "sparePart", en: "Spare Part", zh: "备件", type: "text" }
+  ],
+  lab: [
+    { id: "sampleNo", en: "Sample No.", zh: "样品编号", type: "text" },
+    { id: "product", en: "Product / Material", zh: "产品/原料", type: "text" },
+    { id: "testItem", en: "Test Item", zh: "检测项目", type: "text" },
+    { id: "result", en: "Result", zh: "检测结果", type: "text" },
+    { id: "coaNo", en: "COA No.", zh: "COA 编号", type: "text" }
+  ],
+  affairs: [
+    { id: "meeting", en: "Meeting / Source", zh: "会议/来源", type: "text" },
+    { id: "decision", en: "Decision", zh: "决定事项", type: "textarea", full: true },
+    { id: "nextStep", en: "Next Step", zh: "下一步", type: "textarea", full: true }
+  ]
+};
+
 export const ROLE_SEEDS = [
   {
     id: "super_admin",

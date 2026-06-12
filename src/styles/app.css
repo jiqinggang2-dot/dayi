@@ -104,6 +104,8 @@ button:disabled {
 .form-grid input,
 .form-grid select,
 .form-grid textarea,
+.user-edit-grid input,
+.user-edit-grid select,
 .user-card select {
   width: 100%;
   min-height: 44px;
@@ -120,6 +122,8 @@ button:disabled {
 .form-grid input:focus,
 .form-grid select:focus,
 .form-grid textarea:focus,
+.user-edit-grid input:focus,
+.user-edit-grid select:focus,
 .user-card select:focus,
 .reminder-card textarea:focus {
   border-color: var(--primary);
@@ -299,6 +303,30 @@ td p {
   line-height: 1.5;
 }
 
+.data-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.data-preview span {
+  display: inline-flex;
+  gap: 4px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: #475467;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.data-preview b {
+  color: #1d2939;
+}
+
 .top-actions,
 .form-actions {
   display: flex;
@@ -324,6 +352,7 @@ td p {
   white-space: nowrap;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
   transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  text-decoration: none;
 }
 
 .primary-button {
@@ -348,6 +377,19 @@ td p {
   min-height: 30px;
   padding: 0 10px;
   font-size: 12px;
+}
+
+.small-button.danger {
+  color: var(--red);
+  border-color: #ffd5d2;
+  background: var(--red-soft);
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .language-row {
@@ -630,10 +672,28 @@ tbody tr:last-child td {
 
 .user-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.6fr) auto auto;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(320px, 1.2fr) auto;
   gap: 12px;
   align-items: center;
   padding: 14px;
+}
+
+.user-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.user-edit-grid label {
+  display: grid;
+  gap: 6px;
+  color: #344054;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.user-actions {
+  justify-content: flex-end;
 }
 
 .error-banner,
@@ -697,6 +757,10 @@ tbody tr:last-child td {
   .panel-header,
   .user-card {
     display: grid;
+  }
+
+  .user-edit-grid {
+    grid-template-columns: 1fr;
   }
 
   .top-actions,

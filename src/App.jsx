@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bell, ClipboardList, LogOut, Plus, RefreshCw, Save, Shield, UserPlus, Users } from "lucide-react";
+import { AlertTriangle, Bell, ClipboardList, LogOut, MessageCircle, Plus, RefreshCw, Save, Shield, Trash2, UserPlus, Users } from "lucide-react";
 import { hasSupabaseConfig, supabase } from "./lib/supabase";
 import { createCompanyUser, updateCompanyUser } from "./lib/adminApi";
 import { canAccessModule, canEditRecord, canManageUsers, isSuperAdmin, visibleUsersForAssignment } from "./lib/permissions";
 import { buildAlerts, groupReminders, reminderMessage } from "./lib/reminders";
 import { i18n } from "./data/i18n";
-import { MODULES, RISKS, STATUSES, accessibleModulesFor, labelFor, moduleById, optionLabel } from "./data/modules";
+import { MODULES, MODULE_EXTRA_FIELDS, RISKS, STATUSES, accessibleModulesFor, labelFor, moduleById, optionLabel } from "./data/modules";
 
 const emptyRecord = {
   title: "",
@@ -196,6 +196,18 @@ export default function App() {
     setView("records");
   }
 
+  async function deleteRecord(record) {
+    if (!window.confirm(t.deleteConfirm)) return;
+    setStatus({ loading: true, error: "" });
+    const { error } = await supabase.from("records").delete().eq("id", record.id);
+    if (error) {
+      setStatus({ loading: false, error: error.message });
+      return;
+    }
+    await refreshData();
+    setStatus({ loading: false, error: t.recordDeleted });
+  }
+
   async function saveUser(event) {
     event.preventDefault();
     setStatus({ loading: true, error: "" });
@@ -293,7 +305,7 @@ export default function App() {
       <main className="main">
         <header className="topbar">
           <div>
-            <h1>{pageTitle(view, moduleId, lang, t)}</h1>
+            <h1>{view === "recordForm" && editingRecordId ? t.editRecord : pageTitle(view, moduleId, lang, t)}</h1>
             <p>{profile.full_name || displayAccount(profile)} | {labelForRole(profile.role, lang)} | {isSuperAdmin(profile) ? t.superAdmin : t.onlyVisibleData}</p>
           </div>
           <div className="top-actions">
@@ -306,11 +318,11 @@ export default function App() {
           </div>
         </header>
 
-        {status.error && <div className={status.error === t.userCreated || status.error === t.userUpdated ? "success-banner" : "error-banner"}>{status.error}</div>}
+        {status.error && <div className={[t.userCreated, t.userUpdated, t.recordDeleted].includes(status.error) ? "success-banner" : "error-banner"}>{status.error}</div>}
         {view === "dashboard" && <Dashboard records={visibleRecords} alerts={alerts} t={t} lang={lang} />}
         {view === "alerts" && <Alerts alerts={alerts} lang={lang} users={users} />}
         {view === "reminders" && <Reminders groups={reminderGroups} lang={lang} t={t} />}
-        {view === "records" && <Records moduleId={moduleId} records={visibleRecords.filter((record) => record.module_id === moduleId)} users={users} profile={profile} lang={lang} t={t} onCreate={() => beginCreateRecord(moduleId)} onEdit={beginEditRecord} />}
+        {view === "records" && <Records moduleId={moduleId} records={visibleRecords.filter((record) => record.module_id === moduleId)} users={users} profile={profile} lang={lang} t={t} onCreate={() => beginCreateRecord(moduleId)} onEdit={beginEditRecord} onDelete={deleteRecord} />}
         {view === "recordForm" && <RecordForm draft={recordDraft} setDraft={setRecordDraft} users={visibleUsersForAssignment(users, profile)} profile={profile} roles={roles} lang={lang} t={t} onSubmit={saveRecord} onCancel={() => setView("records")} />}
         {view === "users" && canManageUsers(profile) && <UserManagement users={users} roles={roles} draft={userDraft} setDraft={setUserDraft} t={t} lang={lang} onSubmit={saveUser} onChangeUser={changeUser} />}
       </main>
@@ -390,6 +402,12 @@ function Reminders({ groups, lang, t }) {
     await navigator.clipboard.writeText(reminderMessage(group, MODULES, lang));
   }
 
+  function whatsappUrl(group) {
+    const phone = String(group.owner?.whatsapp || "").replace(/[^\d]/g, "");
+    if (!phone) return "";
+    return `https://wa.me/${phone}?text=${encodeURIComponent(reminderMessage(group, MODULES, lang))}`;
+  }
+
   return (
     <section className="panel">
       <div className="reminder-grid">
@@ -403,7 +421,10 @@ function Reminders({ groups, lang, t }) {
               <span className="pill red">{t.priority}: {group.score}</span>
             </div>
             <textarea readOnly value={reminderMessage(group, MODULES, lang)} />
-            <button className="primary-button" onClick={() => copy(group)}>{t.copyReminder}</button>
+            <div className="row-actions">
+              <button className="primary-button" onClick={() => copy(group)}>{t.copyReminder}</button>
+              {whatsappUrl(group) && <a className="ghost-button" href={whatsappUrl(group)} target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp</a>}
+            </div>
           </article>
         )) : <div className="empty-state">No reminders.</div>}
       </div>
@@ -411,7 +432,7 @@ function Reminders({ groups, lang, t }) {
   );
 }
 
-function Records({ moduleId, records, users, profile, lang, t, onCreate, onEdit }) {
+function Records({ moduleId, records, users, profile, lang, t, onCreate, onEdit, onDelete }) {
   const module = moduleById(moduleId);
   return (
     <section className="panel">
@@ -422,12 +443,12 @@ function Records({ moduleId, records, users, profile, lang, t, onCreate, onEdit 
         </div>
         <button className="primary-button" onClick={onCreate}><Plus size={16} /> {t.createRecord}</button>
       </div>
-      <RecordTable records={records} users={users} lang={lang} t={t} profile={profile} onEdit={onEdit} />
+      <RecordTable records={records} users={users} lang={lang} t={t} profile={profile} onEdit={onEdit} onDelete={onDelete} />
     </section>
   );
 }
 
-function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, onEdit }) {
+function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, onEdit, onDelete }) {
   if (!records.length) return <div className="empty-state">No records.</div>;
   return (
     <div className="table-wrap">
@@ -440,7 +461,7 @@ function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, o
             <th>{t.risk}</th>
             <th>{t.owner}</th>
             <th>{t.deadline}</th>
-            {onEdit && <th></th>}
+            {(onEdit || onDelete) && <th>{t.actions}</th>}
           </tr>
         </thead>
         <tbody>
@@ -449,13 +470,21 @@ function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, o
               <td>
                 <strong>{record.title}</strong>
                 <p>{record.notes}</p>
+                <RecordDataPreview record={record} lang={lang} />
               </td>
               <td>{labelFor(moduleById(record.module_id), lang)}</td>
               <td><span className="pill blue">{optionLabel(STATUSES, record.status, lang)}</span></td>
               <td><span className={`pill ${record.risk === "critical" || record.risk === "high" ? "red" : "green"}`}>{optionLabel(RISKS, record.risk, lang)}</span></td>
               <td>{users.find((user) => user.id === record.owner_user_id)?.full_name || record.owner?.full_name || "-"}</td>
               <td>{record.deadline || "-"}</td>
-              {onEdit && <td>{canEditRecord(profile, record) && <button className="small-button" onClick={() => onEdit(record)}>{t.save}</button>}</td>}
+              {(onEdit || onDelete) && (
+                <td>
+                  <div className="row-actions">
+                    {onEdit && canEditRecord(profile, record) && <button className="small-button" onClick={() => onEdit(record)}>{t.edit}</button>}
+                    {onDelete && isSuperAdmin(profile) && <button className="small-button danger" onClick={() => onDelete(record)}><Trash2 size={14} /> {t.delete}</button>}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -464,10 +493,34 @@ function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, o
   );
 }
 
+function RecordDataPreview({ record, lang }) {
+  const fields = MODULE_EXTRA_FIELDS[record.module_id] || [];
+  const entries = fields
+    .map((field) => ({ field, value: record.data?.[field.id] }))
+    .filter((entry) => entry.value !== undefined && entry.value !== null && String(entry.value).trim() !== "")
+    .slice(0, 6);
+  if (!entries.length) return null;
+  return (
+    <div className="data-preview">
+      {entries.map(({ field, value }) => (
+        <span key={field.id}>
+          <b>{labelFor(field, lang)}:</b> {String(value)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function RecordForm({ draft, setDraft, users, lang, t, onSubmit, onCancel }) {
   function update(field, value) {
     setDraft((current) => ({ ...current, [field]: value }));
   }
+
+  function updateData(field, value) {
+    setDraft((current) => ({ ...current, data: { ...(current.data || {}), [field]: value } }));
+  }
+
+  const extraFields = MODULE_EXTRA_FIELDS[draft.module_id] || [];
 
   return (
     <form className="panel form-panel" onSubmit={onSubmit}>
@@ -480,6 +533,16 @@ function RecordForm({ draft, setDraft, users, lang, t, onSubmit, onCancel }) {
         <UserSelect label={t.approver} value={draft.approver_user_id} users={users} onChange={(value) => update("approver_user_id", value)} />
         <UserSelect label={t.support} value={draft.support_user_id} users={users} onChange={(value) => update("support_user_id", value)} />
         <label>{t.deadline}<input type="date" value={draft.deadline || ""} onChange={(event) => update("deadline", event.target.value)} /></label>
+        {extraFields.map((field) => (
+          <label key={field.id} className={field.full ? "full" : ""}>
+            {labelFor(field, lang)}
+            {field.type === "textarea" ? (
+              <textarea value={draft.data?.[field.id] || ""} onChange={(event) => updateData(field.id, event.target.value)} />
+            ) : (
+              <input type={field.type || "text"} value={draft.data?.[field.id] || ""} onChange={(event) => updateData(field.id, event.target.value)} />
+            )}
+          </label>
+        ))}
         <label className="full">{t.contingency}<textarea value={draft.contingency || ""} onChange={(event) => update("contingency", event.target.value)} /></label>
         <label className="full">{t.notes}<textarea value={draft.notes || ""} onChange={(event) => update("notes", event.target.value)} /></label>
       </div>
@@ -535,26 +598,63 @@ function UserManagement({ users, roles, draft, setDraft, t, lang, onSubmit, onCh
 
       <section className="panel">
         <div className="user-grid">
-          {users.map((user) => (
-            <article className="user-card" key={user.id}>
-              <div>
-                <h3>{user.full_name || displayAccount(user)}</h3>
-                <p>{displayAccount(user)}</p>
-                <span className="pill blue">{labelForRole(user.role, lang)}</span>
-              </div>
-              <select value={user.role_id} disabled={user.role?.is_super_admin} onChange={(event) => onChangeUser(user, { role_id: event.target.value })}>
-                {roles.map((role) => <option key={role.id} value={role.id}>{lang === "zh" ? role.name_zh : role.name_en}</option>)}
-              </select>
-              <button className="ghost-button" disabled={user.role?.is_super_admin} onClick={() => onChangeUser(user, { active: !user.active })}>
-                {user.active ? t.active : t.inactive}
-              </button>
-              <button className="ghost-button" disabled={user.role?.is_super_admin} onClick={() => resetPassword(user)}>
-                {t.resetPassword}
-              </button>
-            </article>
-          ))}
+          {users.map((user) => <UserCard key={user.id} user={user} roles={roles} lang={lang} t={t} onChangeUser={onChangeUser} onResetPassword={resetPassword} />)}
         </div>
       </section>
     </div>
+  );
+}
+
+function UserCard({ user, roles, lang, t, onChangeUser, onResetPassword }) {
+  const [draft, setDraft] = useState({
+    full_name: user.full_name || "",
+    whatsapp: user.whatsapp || "",
+    wechat: user.wechat || "",
+    role_id: user.role_id
+  });
+
+  useEffect(() => {
+    setDraft({
+      full_name: user.full_name || "",
+      whatsapp: user.whatsapp || "",
+      wechat: user.wechat || "",
+      role_id: user.role_id
+    });
+  }, [user]);
+
+  function update(field, value) {
+    setDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  function save() {
+    const { role_id, ...profilePatch } = draft;
+    onChangeUser(user, user.role?.is_super_admin ? profilePatch : draft);
+  }
+
+  return (
+    <article className="user-card">
+      <div>
+        <h3>{user.full_name || displayAccount(user)}</h3>
+        <p>{displayAccount(user)}</p>
+        <span className="pill blue">{labelForRole(user.role, lang)}</span>
+      </div>
+      <div className="user-edit-grid">
+        <label>{t.fullName}<input value={draft.full_name} onChange={(event) => update("full_name", event.target.value)} /></label>
+        <label>{t.phone}<input value={draft.whatsapp} onChange={(event) => update("whatsapp", event.target.value)} /></label>
+        <label>{t.wechat}<input value={draft.wechat} onChange={(event) => update("wechat", event.target.value)} /></label>
+        <label>{t.role}<select value={draft.role_id} disabled={user.role?.is_super_admin} onChange={(event) => update("role_id", event.target.value)}>
+          {roles.map((role) => <option key={role.id} value={role.id}>{lang === "zh" ? role.name_zh : role.name_en}</option>)}
+        </select></label>
+      </div>
+      <div className="row-actions user-actions">
+        <button className="primary-button" onClick={save}>{t.save}</button>
+        <button className="ghost-button" disabled={user.role?.is_super_admin} onClick={() => onChangeUser(user, { active: !user.active })}>
+          {user.active ? t.active : t.inactive}
+        </button>
+        <button className="ghost-button" disabled={user.role?.is_super_admin} onClick={() => onResetPassword(user)}>
+          {t.resetPassword}
+        </button>
+      </div>
+    </article>
   );
 }
