@@ -5,7 +5,7 @@ import { createCompanyUser, updateCompanyUser } from "./lib/adminApi";
 import { canAccessModule, canEditRecord, canManageUsers, isSuperAdmin, visibleUsersForAssignment } from "./lib/permissions";
 import { buildAlerts, groupReminders, reminderMessage } from "./lib/reminders";
 import { i18n } from "./data/i18n";
-import { MODULES, MODULE_EXTRA_FIELDS, RISKS, STATUSES, accessibleModulesFor, labelFor, moduleById, optionLabel } from "./data/modules";
+import { MODULES, MODULE_EXTRA_FIELDS, RISKS, ROLE_SEEDS, STATUSES, accessibleModulesFor, labelFor, moduleById, optionLabel } from "./data/modules";
 
 const emptyRecord = {
   title: "",
@@ -49,6 +49,57 @@ function displayAccount(user) {
   return String(user.email || "").replace(/@dayi\.local$/i, "");
 }
 
+const SAMPLE_USER_NAMES = {
+  gm_sample: { en: "General Manager Sample", zh: "总经理样例" },
+  procurement_sample: { en: "Procurement Sample", zh: "采购负责人样例" },
+  warehouse_sample: { en: "Warehouse Sample", zh: "仓库负责人样例" },
+  production_sample: { en: "Production Sample", zh: "生产负责人样例" },
+  qc_sample: { en: "QC Lab Sample", zh: "实验室负责人样例" },
+  sales_sample: { en: "Sales Sample", zh: "销售负责人样例" },
+  finance_sample: { en: "Finance Sample", zh: "财务负责人样例" },
+  export_sample: { en: "Import Export Sample", zh: "进出口负责人样例" },
+  logistics_sample: { en: "Logistics Sample", zh: "物流负责人样例" },
+  hr_sample: { en: "HR Sample", zh: "人事负责人样例" },
+  maintenance_sample: { en: "Maintenance Sample", zh: "设备维护负责人样例" }
+};
+
+function localizedData(data, key, lang, fallback = "") {
+  if (!data) return fallback;
+  return data[`${key}_${lang}`] ?? data[key] ?? fallback;
+}
+
+const CLEAN_SAMPLE_USER_NAMES = {
+  ...SAMPLE_USER_NAMES,
+  gm_sample: { en: "General Manager Sample", zh: "总经理样例" },
+  procurement_sample: { en: "Procurement Sample", zh: "采购负责人样例" },
+  warehouse_sample: { en: "Warehouse Sample", zh: "仓库负责人样例" },
+  production_sample: { en: "Production Sample", zh: "生产负责人样例" },
+  qc_sample: { en: "QC Lab Sample", zh: "实验室负责人样例" },
+  sales_sample: { en: "Sales Sample", zh: "销售负责人样例" },
+  finance_sample: { en: "Finance Sample", zh: "财务负责人样例" },
+  export_sample: { en: "Import Export Sample", zh: "进出口负责人样例" },
+  logistics_sample: { en: "Logistics Sample", zh: "物流负责人样例" },
+  hr_sample: { en: "HR Sample", zh: "人事负责人样例" },
+  maintenance_sample: { en: "Maintenance Sample", zh: "设备维护负责人样例" }
+};
+
+function recordTitle(record, lang) {
+  return localizedData(record.data, "title", lang, record.title);
+}
+
+function recordNotes(record, lang) {
+  return localizedData(record.data, "notes", lang, record.notes);
+}
+
+function recordContingency(record, lang) {
+  return localizedData(record.data, "contingency", lang, record.contingency);
+}
+
+function displayUserName(user, lang) {
+  if (!user) return "";
+  return CLEAN_SAMPLE_USER_NAMES[user.username]?.[lang] || user.full_name || displayAccount(user);
+}
+
 export default function App() {
   const [lang, setLang] = useState("zh");
   const [session, setSession] = useState(null);
@@ -66,7 +117,7 @@ export default function App() {
 
   const accessibleModules = useMemo(() => accessibleModulesFor(profile), [profile]);
   const visibleRecords = useMemo(() => records.filter((record) => canAccessModule(profile, record.module_id) || canEditRecord(profile, record)), [records, profile]);
-  const alerts = useMemo(() => buildAlerts(visibleRecords), [visibleRecords]);
+  const alerts = useMemo(() => buildAlerts(visibleRecords, lang), [visibleRecords, lang]);
   const reminderGroups = useMemo(() => groupReminders(visibleRecords, users), [visibleRecords, users]);
 
   useEffect(() => {
@@ -162,6 +213,9 @@ export default function App() {
     setRecordDraft({
       ...emptyRecord,
       ...record,
+      title: recordTitle(record, lang),
+      notes: recordNotes(record, lang),
+      contingency: recordContingency(record, lang),
       data: record.data || {}
     });
     setView("recordForm");
@@ -319,8 +373,8 @@ export default function App() {
         </header>
 
         {status.error && <div className={[t.userCreated, t.userUpdated, t.recordDeleted].includes(status.error) ? "success-banner" : "error-banner"}>{status.error}</div>}
-        {view === "dashboard" && <Dashboard records={visibleRecords} alerts={alerts} t={t} lang={lang} />}
-        {view === "alerts" && <Alerts alerts={alerts} lang={lang} users={users} />}
+        {view === "dashboard" && <Dashboard records={visibleRecords} alerts={alerts} users={users} t={t} lang={lang} />}
+        {view === "alerts" && <Alerts alerts={alerts} lang={lang} t={t} users={users} />}
         {view === "reminders" && <Reminders groups={reminderGroups} lang={lang} t={t} />}
         {view === "records" && <Records moduleId={moduleId} records={visibleRecords.filter((record) => record.module_id === moduleId)} users={users} profile={profile} lang={lang} t={t} onCreate={() => beginCreateRecord(moduleId)} onEdit={beginEditRecord} onDelete={deleteRecord} />}
         {view === "recordForm" && <RecordForm draft={recordDraft} setDraft={setRecordDraft} users={visibleUsersForAssignment(users, profile)} profile={profile} roles={roles} lang={lang} t={t} onSubmit={saveRecord} onCancel={() => setView("records")} />}
@@ -348,10 +402,12 @@ function pageTitle(view, moduleId, lang, t) {
 
 function labelForRole(role, lang) {
   if (!role) return "";
+  const seededRole = ROLE_SEEDS.find((item) => item.id === role.id);
+  if (seededRole) return labelFor(seededRole, lang);
   return lang === "zh" ? role.name_zh : role.name_en;
 }
 
-function Dashboard({ records, alerts, t, lang }) {
+function Dashboard({ records, alerts, users, t, lang }) {
   const open = records.filter((record) => !["completed", "approved"].includes(record.status)).length;
   const critical = alerts.filter((alert) => alert.severity === "critical").length;
   return (
@@ -366,7 +422,7 @@ function Dashboard({ records, alerts, t, lang }) {
         <div className="panel-header">
           <h2>{t.records}</h2>
         </div>
-        <RecordTable records={records.slice(0, 8)} lang={lang} t={t} />
+        <RecordTable records={records.slice(0, 8)} users={users} lang={lang} t={t} />
       </section>
     </>
   );
@@ -381,17 +437,17 @@ function Metric({ label, value, tone = "blue" }) {
   );
 }
 
-function Alerts({ alerts, users }) {
+function Alerts({ alerts, users, lang, t }) {
   return (
     <section className="panel">
       <div className="alert-list">
         {alerts.length ? alerts.map((alert, index) => (
           <div className={`alert-row ${alert.severity}`} key={`${alert.record.id}-${index}`}>
-            <strong>{alert.record.title}</strong>
+            <strong>{recordTitle(alert.record, lang)}</strong>
             <span>{alert.reason}</span>
-            <em>{users.find((user) => user.id === alert.record.owner_user_id)?.full_name || t.unassigned}</em>
+            <em>{displayUserName(users.find((user) => user.id === alert.record.owner_user_id), lang) || t.unassigned}</em>
           </div>
-        )) : <div className="empty-state">No alerts.</div>}
+        )) : <div className="empty-state">{t.noAlerts}</div>}
       </div>
     </section>
   );
@@ -415,7 +471,7 @@ function Reminders({ groups, lang, t }) {
           <article className="reminder-card" key={group.owner?.id || group.score}>
             <div className="card-title-row">
               <div>
-                <h3>{group.owner?.full_name || displayAccount(group.owner) || t.unassigned}</h3>
+                <h3>{displayUserName(group.owner, lang) || t.unassigned}</h3>
                 <p>{group.records.length} {t.openItems}</p>
               </div>
               <span className="pill red">{t.priority}: {group.score}</span>
@@ -468,14 +524,14 @@ function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, o
           {records.map((record) => (
             <tr key={record.id}>
               <td>
-                <strong>{record.title}</strong>
-                <p>{record.notes}</p>
+                <strong>{recordTitle(record, lang)}</strong>
+                <p>{recordNotes(record, lang)}</p>
                 <RecordDataPreview record={record} lang={lang} />
               </td>
               <td>{labelFor(moduleById(record.module_id), lang)}</td>
               <td><span className="pill blue">{optionLabel(STATUSES, record.status, lang)}</span></td>
               <td><span className={`pill ${record.risk === "critical" || record.risk === "high" ? "red" : "green"}`}>{optionLabel(RISKS, record.risk, lang)}</span></td>
-              <td>{users.find((user) => user.id === record.owner_user_id)?.full_name || record.owner?.full_name || "-"}</td>
+              <td>{displayUserName(users.find((user) => user.id === record.owner_user_id) || record.owner, lang) || "-"}</td>
               <td>{record.deadline || "-"}</td>
               {(onEdit || onDelete) && (
                 <td>
@@ -496,7 +552,7 @@ function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, o
 function RecordDataPreview({ record, lang }) {
   const fields = MODULE_EXTRA_FIELDS[record.module_id] || [];
   const entries = fields
-    .map((field) => ({ field, value: record.data?.[field.id] }))
+    .map((field) => ({ field, value: localizedData(record.data, field.id, lang) }))
     .filter((entry) => entry.value !== undefined && entry.value !== null && String(entry.value).trim() !== "")
     .slice(0, 6);
   if (!entries.length) return null;
@@ -529,17 +585,17 @@ function RecordForm({ draft, setDraft, users, lang, t, onSubmit, onCancel }) {
         <label>{t.title}<input value={draft.title} onChange={(event) => update("title", event.target.value)} required /></label>
         <label>{t.status}<select value={draft.status} onChange={(event) => update("status", event.target.value)}>{STATUSES.map((status) => <option key={status.id} value={status.id}>{labelFor(status, lang)}</option>)}</select></label>
         <label>{t.risk}<select value={draft.risk} onChange={(event) => update("risk", event.target.value)}>{RISKS.map((risk) => <option key={risk.id} value={risk.id}>{labelFor(risk, lang)}</option>)}</select></label>
-        <UserSelect label={t.owner} value={draft.owner_user_id} users={users} onChange={(value) => update("owner_user_id", value)} />
-        <UserSelect label={t.approver} value={draft.approver_user_id} users={users} onChange={(value) => update("approver_user_id", value)} />
-        <UserSelect label={t.support} value={draft.support_user_id} users={users} onChange={(value) => update("support_user_id", value)} />
+        <UserSelect label={t.owner} value={draft.owner_user_id} users={users} lang={lang} onChange={(value) => update("owner_user_id", value)} />
+        <UserSelect label={t.approver} value={draft.approver_user_id} users={users} lang={lang} onChange={(value) => update("approver_user_id", value)} />
+        <UserSelect label={t.support} value={draft.support_user_id} users={users} lang={lang} onChange={(value) => update("support_user_id", value)} />
         <label>{t.deadline}<input type="date" value={draft.deadline || ""} onChange={(event) => update("deadline", event.target.value)} /></label>
         {extraFields.map((field) => (
           <label key={field.id} className={field.full ? "full" : ""}>
             {labelFor(field, lang)}
             {field.type === "textarea" ? (
-              <textarea value={draft.data?.[field.id] || ""} onChange={(event) => updateData(field.id, event.target.value)} />
+              <textarea value={localizedData(draft.data, field.id, lang)} onChange={(event) => updateData(field.id, event.target.value)} />
             ) : (
-              <input type={field.type || "text"} value={draft.data?.[field.id] || ""} onChange={(event) => updateData(field.id, event.target.value)} />
+              <input type={field.type || "text"} value={localizedData(draft.data, field.id, lang)} onChange={(event) => updateData(field.id, event.target.value)} />
             )}
           </label>
         ))}
@@ -554,13 +610,13 @@ function RecordForm({ draft, setDraft, users, lang, t, onSubmit, onCancel }) {
   );
 }
 
-function UserSelect({ label, value, users, onChange }) {
+function UserSelect({ label, value, users, lang, onChange }) {
   return (
     <label>
       {label}
       <select value={value || ""} onChange={(event) => onChange(event.target.value)}>
         <option value="">-</option>
-        {users.map((user) => <option key={user.id} value={user.id}>{user.full_name || displayAccount(user)}</option>)}
+        {users.map((user) => <option key={user.id} value={user.id}>{displayUserName(user, lang)}</option>)}
       </select>
     </label>
   );
@@ -572,7 +628,7 @@ function UserManagement({ users, roles, draft, setDraft, t, lang, onSubmit, onCh
   }
 
   function resetPassword(user) {
-    const password = window.prompt(`${t.resetPassword}: ${user.full_name || displayAccount(user)}`);
+    const password = window.prompt(`${t.resetPassword}: ${displayUserName(user, lang)}`);
     if (password) onChangeUser(user, { password });
   }
 
@@ -590,7 +646,7 @@ function UserManagement({ users, roles, draft, setDraft, t, lang, onSubmit, onCh
           <label>{t.username}<input value={draft.username} onChange={(event) => update("username", normalizeUsername(event.target.value))} required /></label>
           <label>{t.tempPassword}<input type="password" value={draft.password} onChange={(event) => update("password", event.target.value)} required /></label>
           <label>{t.fullName}<input value={draft.full_name} onChange={(event) => update("full_name", event.target.value)} required /></label>
-          <label>{t.role}<select value={draft.role_id} onChange={(event) => update("role_id", event.target.value)}>{roles.filter((role) => !role.is_super_admin).map((role) => <option key={role.id} value={role.id}>{lang === "zh" ? role.name_zh : role.name_en}</option>)}</select></label>
+          <label>{t.role}<select value={draft.role_id} onChange={(event) => update("role_id", event.target.value)}>{roles.filter((role) => !role.is_super_admin).map((role) => <option key={role.id} value={role.id}>{labelForRole(role, lang)}</option>)}</select></label>
           <label>{t.phone}<input value={draft.whatsapp} onChange={(event) => update("whatsapp", event.target.value)} /></label>
           <label>{t.wechat}<input value={draft.wechat} onChange={(event) => update("wechat", event.target.value)} /></label>
         </div>
@@ -634,7 +690,7 @@ function UserCard({ user, roles, lang, t, onChangeUser, onResetPassword }) {
   return (
     <article className="user-card">
       <div>
-        <h3>{user.full_name || displayAccount(user)}</h3>
+        <h3>{displayUserName(user, lang)}</h3>
         <p>{displayAccount(user)}</p>
         <span className="pill blue">{labelForRole(user.role, lang)}</span>
       </div>
@@ -643,7 +699,7 @@ function UserCard({ user, roles, lang, t, onChangeUser, onResetPassword }) {
         <label>{t.phone}<input value={draft.whatsapp} onChange={(event) => update("whatsapp", event.target.value)} /></label>
         <label>{t.wechat}<input value={draft.wechat} onChange={(event) => update("wechat", event.target.value)} /></label>
         <label>{t.role}<select value={draft.role_id} disabled={user.role?.is_super_admin} onChange={(event) => update("role_id", event.target.value)}>
-          {roles.map((role) => <option key={role.id} value={role.id}>{lang === "zh" ? role.name_zh : role.name_en}</option>)}
+          {roles.map((role) => <option key={role.id} value={role.id}>{labelForRole(role, lang)}</option>)}
         </select></label>
       </div>
       <div className="row-actions user-actions">

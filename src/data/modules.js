@@ -140,21 +140,8 @@ export const MODULE_EXTRA_FIELDS = {
 };
 
 export const ROLE_SEEDS = [
-  {
-    id: "super_admin",
-    zh: "CEO / 超级管理员",
-    en: "CEO / Super Admin",
-    moduleIds: MODULES.map((module) => module.id),
-    isSuperAdmin: true,
-    canManageUsers: true
-  },
-  {
-    id: "general_manager",
-    zh: "总经理",
-    en: "General Manager",
-    moduleIds: MODULES.map((module) => module.id).filter((id) => id !== "finance"),
-    canManageUsers: false
-  },
+  { id: "super_admin", zh: "CEO / 超级管理员", en: "CEO / Super Admin", moduleIds: MODULES.map((module) => module.id), isSuperAdmin: true, canManageUsers: true },
+  { id: "general_manager", zh: "总经理", en: "General Manager", moduleIds: MODULES.map((module) => module.id).filter((id) => id !== "finance"), canManageUsers: false },
   { id: "procurement_manager", zh: "采购经理", en: "Procurement Manager", moduleIds: ["procurement", "warehouse", "import_export", "market_intelligence"] },
   { id: "warehouse_manager", zh: "仓库主管", en: "Warehouse Supervisor", moduleIds: ["warehouse", "procurement", "logistics"] },
   { id: "production_manager", zh: "生产经理", en: "Production Manager", moduleIds: ["production", "warehouse", "maintenance", "lab", "market_intelligence"] },
