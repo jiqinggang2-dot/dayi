@@ -50,7 +50,7 @@ function displayAccount(user) {
 }
 
 export default function App() {
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState("zh");
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [roles, setRoles] = useState([]);
@@ -313,7 +313,7 @@ export default function App() {
               <button type="button" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
               <button type="button" className={lang === "zh" ? "active" : ""} onClick={() => setLang("zh")}>中文</button>
             </div>
-            <button className="ghost-button" onClick={refreshData}><RefreshCw size={16} /> Refresh</button>
+            <button className="ghost-button" onClick={refreshData}><RefreshCw size={16} /> {t.refresh}</button>
             <button className="ghost-button" onClick={signOut}><LogOut size={16} /> {t.signOut}</button>
           </div>
         </header>
@@ -366,7 +366,7 @@ function Dashboard({ records, alerts, t, lang }) {
         <div className="panel-header">
           <h2>{t.records}</h2>
         </div>
-        <RecordTable records={records.slice(0, 8)} lang={lang} />
+        <RecordTable records={records.slice(0, 8)} lang={lang} t={t} />
       </section>
     </>
   );
@@ -389,7 +389,7 @@ function Alerts({ alerts, users }) {
           <div className={`alert-row ${alert.severity}`} key={`${alert.record.id}-${index}`}>
             <strong>{alert.record.title}</strong>
             <span>{alert.reason}</span>
-            <em>{users.find((user) => user.id === alert.record.owner_user_id)?.full_name || "Unassigned"}</em>
+            <em>{users.find((user) => user.id === alert.record.owner_user_id)?.full_name || t.unassigned}</em>
           </div>
         )) : <div className="empty-state">No alerts.</div>}
       </div>
@@ -415,7 +415,7 @@ function Reminders({ groups, lang, t }) {
           <article className="reminder-card" key={group.owner?.id || group.score}>
             <div className="card-title-row">
               <div>
-                <h3>{group.owner?.full_name || displayAccount(group.owner) || "Unassigned"}</h3>
+                <h3>{group.owner?.full_name || displayAccount(group.owner) || t.unassigned}</h3>
                 <p>{group.records.length} {t.openItems}</p>
               </div>
               <span className="pill red">{t.priority}: {group.score}</span>
@@ -426,7 +426,7 @@ function Reminders({ groups, lang, t }) {
               {whatsappUrl(group) && <a className="ghost-button" href={whatsappUrl(group)} target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp</a>}
             </div>
           </article>
-        )) : <div className="empty-state">No reminders.</div>}
+        )) : <div className="empty-state">{t.noReminders}</div>}
       </div>
     </section>
   );
@@ -449,7 +449,7 @@ function Records({ moduleId, records, users, profile, lang, t, onCreate, onEdit,
 }
 
 function RecordTable({ records, users = [], lang = "en", t = i18n.en, profile, onEdit, onDelete }) {
-  if (!records.length) return <div className="empty-state">No records.</div>;
+  if (!records.length) return <div className="empty-state">{t.noRecords}</div>;
   return (
     <div className="table-wrap">
       <table>
