@@ -17,6 +17,9 @@ export function recordScore(record) {
   if (due === 0) score += 4;
   const docs = missingDocs(record);
   if (docs.length) score += Math.min(6, docs.length * 2);
+  marketAlerts(record).forEach((alert) => {
+    score += alert.severity === "critical" ? 8 : 4;
+  });
   return score;
 }
 
@@ -28,7 +31,7 @@ export function missingDocs(record) {
 
 function splitDocs(value) {
   return String(value || "")
-    .split(/[,，;；\n]/)
+    .split(/[,;，；\n]/)
     .map((item) => item.trim())
     .filter(Boolean);
 }
@@ -51,8 +54,46 @@ export function buildAlerts(records = []) {
     if (docs.length) {
       alerts.push({ record, severity: docs.length > 2 ? "critical" : "warning", reason: `Missing documents: ${docs.join(", ")}` });
     }
+    alerts.push(...marketAlerts(record).map((alert) => ({ record, ...alert })));
     return alerts;
   });
+}
+
+function marketAlerts(record) {
+  if (record.module_id !== "market_intelligence") return [];
+  const data = record.data || {};
+  const alerts = [];
+  const priceChange = Number(data.priceChangePercent);
+  const freightCost = Number(data.freightCostUsd);
+  const inventoryCover = Number(data.inventoryCoverDays);
+  const restriction = String(data.exportRestrictionLevel || "").toLowerCase();
+  const policy = String(data.chinaPolicyStatus || "").toLowerCase();
+
+  if (Number.isFinite(priceChange) && Math.abs(priceChange) >= 15) {
+    alerts.push({
+      severity: Math.abs(priceChange) >= 30 ? "critical" : "warning",
+      reason: `Price movement ${priceChange}%`
+    });
+  }
+  if (["high", "critical", "suspended", "ban", "restricted"].some((word) => restriction.includes(word) || policy.includes(word))) {
+    alerts.push({
+      severity: restriction.includes("critical") || policy.includes("suspend") || policy.includes("ban") ? "critical" : "warning",
+      reason: "Export restriction / policy risk"
+    });
+  }
+  if (Number.isFinite(freightCost) && freightCost >= 90) {
+    alerts.push({
+      severity: freightCost >= 130 ? "critical" : "warning",
+      reason: `High freight cost USD ${freightCost}/t`
+    });
+  }
+  if (Number.isFinite(inventoryCover) && inventoryCover <= 30) {
+    alerts.push({
+      severity: inventoryCover <= 15 ? "critical" : "warning",
+      reason: `Inventory cover ${inventoryCover} day(s)`
+    });
+  }
+  return alerts;
 }
 
 export function groupReminders(records = [], users = []) {
@@ -95,7 +136,8 @@ export function reminderMessage(group, modules, lang = "en") {
     return [
       `${index + 1}. ${record.title}`,
       `   Module: ${module?.en || record.module_id} | Status: ${record.status} | Risk: ${record.risk} | Deadline: ${record.deadline || "-"} (${dueText})`,
-      record.contingency ? `   Contingency: ${record.contingency}` : ""
+      record.contingency ? `   Contingency: ${record.contingency}` : "",
+      record.module_id === "market_intelligence" && record.data?.recommendedAction ? `   Recommended action: ${record.data.recommendedAction}` : ""
     ].filter(Boolean);
   });
   return [...intro, "", ...body, "", "Please reply before the end of today."].join("\n");

@@ -88,16 +88,16 @@ for each row execute function public.touch_updated_at();
 
 insert into public.app_roles (id, name_en, name_zh, module_ids, is_super_admin, can_manage_users, sort_order)
 values
-  ('super_admin', 'CEO / Super Admin', 'CEO / 超级管理员', array['organization','documents','procurement','warehouse','production','sales','finance','import_export','logistics','hr','maintenance','lab','affairs'], true, true, 1),
-  ('general_manager', 'General Manager', '总经理', array['organization','documents','procurement','warehouse','production','sales','import_export','logistics','hr','maintenance','lab','affairs'], false, false, 2),
-  ('procurement_manager', 'Procurement Manager', '采购经理', array['procurement','warehouse','import_export'], false, false, 3),
+  ('super_admin', 'CEO / Super Admin', 'CEO / ?????', array['organization','documents','procurement','warehouse','production','sales','finance','import_export','logistics','hr','maintenance','lab','affairs','market_intelligence'], true, true, 1),
+  ('general_manager', 'General Manager', '???', array['organization','documents','procurement','warehouse','production','sales','import_export','logistics','hr','maintenance','lab','affairs','market_intelligence'], false, false, 2),
+  ('procurement_manager', 'Procurement Manager', '????', array['procurement','warehouse','import_export','market_intelligence'], false, false, 3),
   ('warehouse_manager', 'Warehouse Supervisor', '仓库主管', array['warehouse','procurement','logistics'], false, false, 4),
   ('production_manager', 'Production Manager', '生产经理', array['production','warehouse','maintenance','lab'], false, false, 5),
   ('qc_manager', 'QC / Lab Manager', '质量/实验室负责人', array['lab','production','documents'], false, false, 6),
-  ('sales_manager', 'Sales Manager', '销售经理', array['sales','warehouse','logistics'], false, false, 7),
-  ('finance_manager', 'Finance Manager', '财务经理', array['finance','procurement','sales','import_export'], false, false, 8),
-  ('import_export_manager', 'Import/Export Manager', '进出口负责人', array['import_export','procurement','warehouse','logistics'], false, false, 9),
-  ('logistics_coordinator', 'Logistics Coordinator', '物流运输协调', array['logistics','warehouse','sales'], false, false, 10),
+  ('sales_manager', 'Sales Manager', '????', array['sales','warehouse','logistics','market_intelligence'], false, false, 7),
+  ('finance_manager', 'Finance Manager', '????', array['finance','procurement','sales','import_export','market_intelligence'], false, false, 8),
+  ('import_export_manager', 'Import/Export Manager', '??????', array['import_export','procurement','warehouse','logistics','market_intelligence'], false, false, 9),
+  ('logistics_coordinator', 'Logistics Coordinator', '??????', array['logistics','warehouse','sales','market_intelligence'], false, false, 10),
   ('hr_admin', 'HR Admin', '人事行政', array['hr','organization','documents'], false, false, 11),
   ('maintenance_supervisor', 'Maintenance Supervisor', '设备维护主管', array['maintenance','production','warehouse'], false, false, 12)
 on conflict (id) do update set

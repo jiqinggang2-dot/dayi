@@ -11,7 +11,8 @@ export const MODULES = [
   { id: "hr", zh: "人事管理", en: "HR", index: "10" },
   { id: "maintenance", zh: "设备维护管理", en: "Maintenance", index: "11" },
   { id: "lab", zh: "实验室管理", en: "Laboratory / QC", index: "12" },
-  { id: "affairs", zh: "实时事务管理", en: "Real-time Affairs", index: "13" }
+  { id: "affairs", zh: "实时事务管理", en: "Real-time Affairs", index: "13" },
+  { id: "market_intelligence", zh: "特肥市场监控预警", en: "Market Intelligence", index: "14" }
 ];
 
 export const STATUSES = [
@@ -117,6 +118,24 @@ export const MODULE_EXTRA_FIELDS = {
     { id: "meeting", en: "Meeting / Source", zh: "会议/来源", type: "text" },
     { id: "decision", en: "Decision", zh: "决定事项", type: "textarea", full: true },
     { id: "nextStep", en: "Next Step", zh: "下一步", type: "textarea", full: true }
+  ],
+  market_intelligence: [
+    { id: "rawMaterial", en: "Raw Material / Product", zh: "原料/产品", type: "text" },
+    { id: "originCountry", en: "Origin Country", zh: "来源国家", type: "text" },
+    { id: "chinaPolicyStatus", en: "China Policy Status", zh: "中国政策状态", type: "text" },
+    { id: "exportRestrictionLevel", en: "Export Restriction Level", zh: "出口限制等级", type: "text" },
+    { id: "pakistanImportImpact", en: "Pakistan Import Impact", zh: "对巴基斯坦进口影响", type: "textarea", full: true },
+    { id: "currentPriceUsd", en: "Current Price USD/t", zh: "当前价格 USD/吨", type: "number" },
+    { id: "previousPriceUsd", en: "Previous Price USD/t", zh: "前期价格 USD/吨", type: "number" },
+    { id: "priceChangePercent", en: "Price Change %", zh: "价格波动 %", type: "number" },
+    { id: "freightCostUsd", en: "Freight Cost USD/t", zh: "运输成本 USD/吨", type: "number" },
+    { id: "freightRoute", en: "Freight Route", zh: "运输路线", type: "text" },
+    { id: "pakistanCropSeason", en: "Pakistan Crop Season", zh: "巴基斯坦作物季节", type: "text" },
+    { id: "targetCrops", en: "Target Crops", zh: "重点作物", type: "text" },
+    { id: "fertilizerFit", en: "Suitable Fertilizer Types", zh: "适合肥类", type: "textarea", full: true },
+    { id: "inventoryCoverDays", en: "Inventory Cover Days", zh: "库存覆盖天数", type: "number" },
+    { id: "recommendedAction", en: "Recommended Action", zh: "建议动作", type: "textarea", full: true },
+    { id: "sourceUrl", en: "Source / Reference URL", zh: "来源链接", type: "text" }
   ]
 };
 
@@ -136,19 +155,20 @@ export const ROLE_SEEDS = [
     moduleIds: MODULES.map((module) => module.id).filter((id) => id !== "finance"),
     canManageUsers: false
   },
-  { id: "procurement_manager", zh: "采购经理", en: "Procurement Manager", moduleIds: ["procurement", "warehouse", "import_export"] },
+  { id: "procurement_manager", zh: "采购经理", en: "Procurement Manager", moduleIds: ["procurement", "warehouse", "import_export", "market_intelligence"] },
   { id: "warehouse_manager", zh: "仓库主管", en: "Warehouse Supervisor", moduleIds: ["warehouse", "procurement", "logistics"] },
-  { id: "production_manager", zh: "生产经理", en: "Production Manager", moduleIds: ["production", "warehouse", "maintenance", "lab"] },
-  { id: "qc_manager", zh: "质量/实验室负责人", en: "QC / Lab Manager", moduleIds: ["lab", "production", "documents"] },
-  { id: "sales_manager", zh: "销售经理", en: "Sales Manager", moduleIds: ["sales", "warehouse", "logistics"] },
-  { id: "finance_manager", zh: "财务经理", en: "Finance Manager", moduleIds: ["finance", "procurement", "sales", "import_export"] },
-  { id: "import_export_manager", zh: "进出口负责人", en: "Import/Export Manager", moduleIds: ["import_export", "procurement", "warehouse", "logistics"] },
-  { id: "logistics_coordinator", zh: "物流运输协调", en: "Logistics Coordinator", moduleIds: ["logistics", "warehouse", "sales"] },
+  { id: "production_manager", zh: "生产经理", en: "Production Manager", moduleIds: ["production", "warehouse", "maintenance", "lab", "market_intelligence"] },
+  { id: "qc_manager", zh: "质量/实验室负责人", en: "QC / Lab Manager", moduleIds: ["lab", "production", "documents", "market_intelligence"] },
+  { id: "sales_manager", zh: "销售经理", en: "Sales Manager", moduleIds: ["sales", "warehouse", "logistics", "market_intelligence"] },
+  { id: "finance_manager", zh: "财务经理", en: "Finance Manager", moduleIds: ["finance", "procurement", "sales", "import_export", "market_intelligence"] },
+  { id: "import_export_manager", zh: "进出口负责人", en: "Import/Export Manager", moduleIds: ["import_export", "procurement", "warehouse", "logistics", "market_intelligence"] },
+  { id: "logistics_coordinator", zh: "物流运输协调", en: "Logistics Coordinator", moduleIds: ["logistics", "warehouse", "sales", "market_intelligence"] },
   { id: "hr_admin", zh: "人事行政", en: "HR Admin", moduleIds: ["hr", "organization", "documents"] },
   { id: "maintenance_supervisor", zh: "设备维护主管", en: "Maintenance Supervisor", moduleIds: ["maintenance", "production", "warehouse"] }
 ];
 
 export function labelFor(item, lang = "en") {
+  if (!item) return "";
   return lang === "zh" ? item.zh : item.en;
 }
 
